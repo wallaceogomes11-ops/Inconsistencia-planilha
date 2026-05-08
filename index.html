@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuditIQ — Análise Inteligente de Estoque</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- PapaParse -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════
+       LOADING SCREEN
+  ══════════════════════════════════════════════ -->
+  <div id="loading-screen">
+    <div class="loader-inner">
+      <div class="loader-logo">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <rect width="48" height="48" rx="12" fill="var(--accent)"/>
+          <path d="M14 24L20 30L34 18" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="24" cy="24" r="18" stroke="rgba(255,255,255,0.3)" stroke-width="2" fill="none"/>
+        </svg>
+        <span>AuditIQ</span>
+      </div>
+      <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
+      <p class="loader-status" id="loader-status">Iniciando sistema...</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       APP WRAPPER
+  ══════════════════════════════════════════════ -->
+  <div id="app" style="display:none">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
+          <rect width="48" height="48" rx="12" fill="var(--accent)"/>
+          <path d="M14 24L20 30L34 18" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>AuditIQ</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="dashboard">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </a>
+        <a href="#" class="nav-item" data-section="tabela">
+          <svg viewBox="0 0 24 24"><path d="M3 10h18M3 14h18M10 3v18M3 6a1 1 0 011-1h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6z"/></svg>
+          Tabela de Dados
+        </a>
+        <a href="#" class="nav-item" data-section="graficos">
+          <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          Gráficos
+        </a>
+        <a href="#" class="nav-item" data-section="relatorio">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Relatório
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="theme-toggle" id="theme-toggle" title="Alternar tema">
+          <svg id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg id="icon-sun" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <span id="theme-label">Modo Escuro</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+      <!-- TOP HEADER -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle" id="menu-toggle">
+            <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="topbar-title">
+            <h1 id="section-title">Dashboard Executivo</h1>
+            <p id="section-sub">Análise inteligente de inconsistências em estoque e inventário</p>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="last-update">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span id="last-update-time">—</span>
+          </div>
+          <button class="btn btn-primary" id="btn-refresh">
+            <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            Atualizar
+          </button>
+        </div>
+      </header>
+
+      <!-- ═══════════════════════════════
+           SECTION: DASHBOARD
+      ═══════════════════════════════ -->
+      <section class="section active" id="section-dashboard">
+
+        <!-- KPI CARDS -->
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-total">
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-label">Total de Linhas</span>
+              <span class="kpi-value" id="kpi-total">—</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-issues">
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-label">Total de Inconsistências</span>
+              <span class="kpi-value" id="kpi-issues">—</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-duplicates">
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-label">Duplicidades</span>
+              <span class="kpi-value" id="kpi-duplicates">—</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-empty">
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-label">Campos Vazios</span>
+              <span class="kpi-value" id="kpi-empty">—</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-address">
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-label">Endereços Inválidos</span>
+              <span class="kpi-value" id="kpi-address">—</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-critical">
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-label">Itens Críticos</span>
+              <span class="kpi-value" id="kpi-critical">—</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-score">
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-label">Score de Risco</span>
+              <span class="kpi-value" id="kpi-score">—</span>
+            </div>
+            <div class="score-bar-wrap"><div class="score-bar" id="score-bar"></div></div>
+          </div>
+        </div>
+
+        <!-- FILTER PILLS -->
+        <div class="filter-section">
+          <h3 class="filter-title">Filtros por Inconsistência</h3>
+          <div class="filter-pills" id="filter-pills">
+            <button class="pill pill-all active" data-filter="all">
+              <svg viewBox="0 0 24 24"><path d="M3 6h18M8 12h8M11 18h2"/></svg>
+              Todos
+            </button>
+            <button class="pill pill-duplicate" data-filter="duplicate">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Duplicados <span class="pill-count" id="pc-duplicate">0</span>
+            </button>
+            <button class="pill pill-empty" data-filter="empty">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Campos Vazios <span class="pill-count" id="pc-empty">0</span>
+            </button>
+            <button class="pill pill-address" data-filter="address">
+              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              End. Inválido <span class="pill-count" id="pc-address">0</span>
+            </button>
+            <button class="pill pill-zero" data-filter="zero">
+              <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Qtd. Zero <span class="pill-count" id="pc-zero">0</span>
+            </button>
+            <button class="pill pill-negative" data-filter="negative">
+              <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              Qtd. Negativa <span class="pill-count" id="pc-negative">0</span>
+            </button>
+            <button class="pill pill-desc" data-filter="desc">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Descrição Div. <span class="pill-count" id="pc-desc">0</span>
+            </button>
+            <button class="pill pill-suspicious" data-filter="suspicious">
+              <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Suspeitos <span class="pill-count" id="pc-suspicious">0</span>
+            </button>
+            <button class="pill pill-chars" data-filter="chars">
+              <svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+              Caracteres Inv. <span class="pill-count" id="pc-chars">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ACTION BAR -->
+        <div class="action-bar">
+          <div class="action-bar-left">
+            <div class="search-wrap">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="search-input" placeholder="Buscar em toda a planilha..." />
+            </div>
+          </div>
+          <div class="action-bar-right">
+            <button class="btn btn-ghost" id="btn-clear">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Limpar Filtros
+            </button>
+            <button class="btn btn-secondary" id="btn-export-filtered">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exportar Filtrado
+            </button>
+            <button class="btn btn-primary" id="btn-export-full">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Relatório Completo
+            </button>
+          </div>
+        </div>
+
+        <!-- DATA TABLE -->
+        <div class="table-wrap">
+          <div class="table-header-row">
+            <span class="table-count" id="table-count">0 registros</span>
+            <div class="pagination-controls">
+              <button class="page-btn" id="btn-prev">‹</button>
+              <span id="page-info">1 / 1</span>
+              <button class="page-btn" id="btn-next">›</button>
+              <select id="page-size" class="page-size-select">
+                <option value="20">20 / página</option>
+                <option value="50">50 / página</option>
+                <option value="100">100 / página</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-container">
+            <table id="main-table">
+              <thead id="table-head"></thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ═══════════════════════════════
+           SECTION: TABELA RAW
+      ═══════════════════════════════ -->
+      <section class="section" id="section-tabela">
+        <div class="table-wrap">
+          <div class="table-header-row">
+            <span class="table-count" id="raw-count">0 registros</span>
+          </div>
+          <div class="table-container">
+            <table id="raw-table">
+              <thead id="raw-head"></thead>
+              <tbody id="raw-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════
+           SECTION: GRÁFICOS
+      ═══════════════════════════════ -->
+      <section class="section" id="section-graficos">
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3>Distribuição por Tipo de Inconsistência</h3>
+            <div class="chart-wrap"><canvas id="chart-pie"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3>Inconsistências por Severidade</h3>
+            <div class="chart-wrap"><canvas id="chart-severity"></canvas></div>
+          </div>
+          <div class="chart-card chart-wide">
+            <h3>Volume por Tipo</h3>
+            <div class="chart-wrap"><canvas id="chart-bar"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════
+           SECTION: RELATÓRIO
+      ═══════════════════════════════ -->
+      <section class="section" id="section-relatorio">
+        <div class="report-wrap" id="report-content">
+          <div class="report-header">
+            <div class="report-logo">
+              <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
+                <rect width="48" height="48" rx="12" fill="var(--accent)"/>
+                <path d="M14 24L20 30L34 18" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div>
+                <h2>AuditIQ — Relatório Executivo</h2>
+                <p id="report-date">—</p>
+              </div>
+            </div>
+          </div>
+          <div id="report-body"></div>
+          <div class="report-actions">
+            <button class="btn btn-primary" id="btn-print-report">
+              <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              Imprimir / PDF
+            </button>
+            <button class="btn btn-secondary" id="btn-export-csv-report">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exportar CSV
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
